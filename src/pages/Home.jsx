@@ -1,40 +1,88 @@
-import { useState } from "react";
-import AnimeCard from "../components/AnimeCard"
+import { useState, useEffect, useRef } from "react";
+import AnimeCard from "../components/AnimeCard";
+import { getPopularAnimes, searchAnimes } from "../services/api";
 
-function Home(){
-    const[searchQuery, setSearchQuery] = useState("");
+function Home() {
+  const [animes, setAnimes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const debounceTimeout = useRef(null);
 
-    const animes = [
-        {id: 1, title: "Naruto: Shippuden", release_date: "2007"},
-        {id: 2, title: "Jujutsu Kaisen", release_date: "2020"},
-        {id: 3, title: "Gachiakuta", release_date: "2025"},
-        {id: 4, title: "Your Lie in April", release_date: "2014"},
-    ];
+  // Search effect with debounce
+  useEffect(() => {
+    // Clear previous debounce
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
-    const handleSearch = (e) => {
-        e.preventDefault()
-        alert(searchQuery)
-        setSearchQuery("")
-    };
+    debounceTimeout.current = setTimeout(() => {
+      fetchAnimes();
+    }, 500);
 
-    return <div className="home">
-        <form onSubmit={handleSearch} className="search-form">
-            <input type="text" 
-            placeholder="Search for animes..." 
-            className="search-input" 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)}/>
-            <button type="submit" className="search-button">Search</button>
-        </form>
-        <div className="animes-grid">
-            {animes.map(
-                (anime) => 
-            anime.title.toLowerCase().startsWith(searchQuery) && (
-                <AnimeCard anime={anime} key={anime.id} />
-              )
-            )}
-        </div>
+    return () => clearTimeout(debounceTimeout.current);
+  }, [searchQuery, page]);
+
+  // Fetch function used in debounce and manual search
+  const fetchAnimes = async () => {
+    setLoading(true);
+    if (!searchQuery.trim()) {
+      const popular = await getPopularAnimes(page);
+      setAnimes(popular);
+    } else {
+      const results = await searchAnimes(searchQuery, page);
+      setAnimes(results);
+    }
+    setLoading(false);
+  };
+
+  // Handle typing in search input
+  const handleInputChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1);
+  };
+
+  // Handle manual form submit (Search button)
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current); // cancel debounce
+    fetchAnimes(); // immediate fetch on submit
+  };
+
+  const handleNext = () => setPage((prev) => prev + 1);
+  const handlePrev = () => setPage((prev) => Math.max(prev - 1, 1));
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={handleInputChange}
+          placeholder="Search anime..."
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {animes.map((anime) => (
+              <AnimeCard key={anime.mal_id} anime={anime} />
+            ))}
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <button onClick={handlePrev} disabled={page === 1}>
+              Previous
+            </button>
+            <span style={{ margin: "0 10px" }}>Page: {page}</span>
+            <button onClick={handleNext}>Next</button>
+          </div>
+        </>
+      )}
     </div>
+  );
 }
 
-export default Home
+export default Home;

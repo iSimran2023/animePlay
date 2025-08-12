@@ -1,20 +1,20 @@
 import { BrowserRouter } from "react-router-dom";
-import "./App.css";
 import Home from "./pages/Home";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route }  from "react-router-dom";
 import Favorites from "./pages/Favorites";
 import Navbar from "./components/Navbar";
+import { AnimeProvider } from "./contexts/AnimeContext";
 
 function App() {
   return (
-    <div>
+    <AnimeProvider>
       <Navbar />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/favorites" element={<Favorites />} />
     </Routes>
-    </div>
+    </AnimeProvider>
   );
 }
 
-export default App;
+export default App
