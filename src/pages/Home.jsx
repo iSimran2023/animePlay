@@ -44,7 +44,7 @@ function Home() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current); // cancel debounce
-    fetchAnimes(); // immediate fetch on submit
+    fetchAnimes(); 
   };
 
   const handleNext = () => setPage((prev) => prev + 1);
